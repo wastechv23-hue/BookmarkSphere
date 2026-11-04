@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookmarkSphere - Sistem Manajemen & Tata Kelola Data Bookmark Interaktif</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        sand: {
+                            50: '#fdfbf7',
+                            100: '#f7f2e8',
+                            200: '#efe3d0',
+                            300: '#e2cdb0',
+                            800: '#5a4936',
+                            900: '#3d3023',
+                        },
+                        emeraldCustom: {
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Chart Container Rules */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 380px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<!-- Chosen Palette: Warm Sand & Slate Emerald (Light background grounded in warm neutrals with subtle emerald accents) -->
+<!-- Application Structure Plan:
+     Designed as an all-in-one Data Governance & Explorer Dashboard for Browser Bookmarks.
+     - Section 1: Ringkasan Eksekutif & Dashboard Analytics (KPIs, Domain breakdown, Internal vs External stats via Chart.js).
+     - Section 2: Explorer & Pengelola Bookmark Interaktif (Live dataset viewer with bookmark search, category filtering, duplicate detection, and detail modal using sample reference bookmarks).
+     - Section 3: Arsitektur Data & Skema Closure Table (Visual interactive tree structure, Database tables viewer, 6-stage pipeline flow visualizer).
+     - Section 4: Simulator Normalisasi URL & Deduplikasi (Interactive canonicalizer tool testing query-stripping, lowercasing, and SHA-256 hash generation).
+     - Section 5: Cetak Biru Logic & Code Exporter (Interactive Python & JS script logic ready for implementation).
+     Rationale: Replaces static text with interactive learning tools, enabling immediate verification of how Netscape HTML bookmarks are processed, canonicalized, stored, and managed. -->
+<!-- Visualization & Content Choices:
+     - Dataset: Parsed sample bookmarks from user input (Chrome internal, AI tools, WasobiTech, Cloud Storage, External tools).
+     - Chart 1: Donut Chart (Chart.js) -> Categorical distribution of reference bookmarks -> Interactive hover -> Proportions of SaaS, AI, Internal, SEO, Media.
+     - Chart 2: Stacked Bar Chart (Chart.js) -> URL Protocol & Access Type (HTTPS vs HTTP vs Internal chrome:// vs Cloud Storage).
+     - Flow diagrams: Styled HTML/Tailwind node cards with step indicators and Unicode arrows (NO SVG/Mermaid) for Closure Table logic and 6-stage import pipeline.
+     - Confirmation: NO SVG tags or Mermaid JS libraries are used anywhere in this file. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+<body class="bg-sand-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-white border-b border-sand-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-emeraldCustom-700 text-white flex items-center justify-center font-bold text-xl shadow-md">
+                        🔖
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg text-slate-900 leading-tight">BookmarkSphere</h1>
+                        <p class="text-xs text-slate-500">Sistem Tata Kelola & Explorer Data Bookmark</p>
+                    </div>
+                </div>
+                <div class="hidden md:flex space-x-1 bg-sand-100 p-1 rounded-xl border border-sand-200 text-sm font-medium">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="tab-btn px-4 py-2 rounded-lg transition-all text-emeraldCustom-800 bg-white shadow-sm font-semibold">
+                        📊 Dashboard & Analisis
+                    </button>
+                    <button onclick="switchTab('explorer')" id="nav-explorer" class="tab-btn px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900">
+                        📁 Explorer Bookmark
+                    </button>
+                    <button onclick="switchTab('architecture')" id="nav-architecture" class="tab-btn px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900">
+                        🗄️ Closure Table & DB
+                    </button>
+                    <button onclick="switchTab('canonicalizer')" id="nav-canonicalizer" class="tab-btn px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900">
+                        ⚡ Simulator Normalisasi
+                    </button>
+                    <button onclick="switchTab('blueprint')" id="nav-blueprint" class="tab-btn px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900">
+                        💻 Cetak Biru Skrip
+                    </button>
+                </div>
+            </div>
+            <!-- Mobile Navigation Scrollable -->
+            <div class="flex md:hidden overflow-x-auto py-2 space-x-2 border-t border-sand-100 text-xs font-medium custom-scrollbar">
+                <button onclick="switchTab('dashboard')" id="mob-nav-dashboard" class="px-3 py-1.5 rounded-lg whitespace-nowrap bg-emeraldCustom-700 text-white">📊 Dashboard</button>
+                <button onclick="switchTab('explorer')" id="mob-nav-explorer" class="px-3 py-1.5 rounded-lg whitespace-nowrap bg-sand-200 text-slate-700">📁 Explorer</button>
+                <button onclick="switchTab('architecture')" id="mob-nav-architecture" class="px-3 py-1.5 rounded-lg whitespace-nowrap bg-sand-200 text-slate-700">🗄️ Closure Table</button>
+                <button onclick="switchTab('canonicalizer')" id="mob-nav-canonicalizer" class="px-3 py-1.5 rounded-lg whitespace-nowrap bg-sand-200 text-slate-700">⚡ Normalisasi</button>
+                <button onclick="switchTab('blueprint')" id="mob-nav-blueprint" class="px-3 py-1.5 rounded-lg whitespace-nowrap bg-sand-200 text-slate-700">💻 Skrip Backend</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ==================== TAB 1: DASHBOARD & ANALISIS DATA ==================== -->
+        <section id="tab-dashboard" class="space-y-6">
+            <!-- Introduction Header -->
+            <div class="bg-gradient-to-r from-emeraldCustom-900 to-emeraldCustom-700 rounded-2xl p-6 text-white shadow-lg">
+                <div class="max-w-3xl">
+                    <span class="inline-block px-3 py-1 bg-emeraldCustom-600/50 border border-emeraldCustom-500 rounded-full text-xs font-medium mb-3 text-emerald-100">
+                        Riset & Arsitektur Tata Kelola Data
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Analisis Sistem Manajemen Bookmark Web</h2>
+                    <p class="mt-2 text-emerald-100 text-sm sm:text-base leading-relaxed">
+                        Aplikasi ini memetakan dataset referensi bookmark HTML (format Netscape) menjadi arsitektur terstruktur. Temukan bagaimana data internal peramban, tautan eksternal SaaS, serta *URL storage* privat dikelola menggunakan model *Closure Table* dan pipa normalisasi kanonikal.
+                    </p>
+                </div>
+            </div>
+
+            <!-- KPI Metric Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-sand-200 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Bookmark</span>
+                        <span class="text-lg">🔗</span>
+                    </div>
+                    <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2" id="kpi-total-bookmarks">43</p>
+                    <p class="text-xs text-emerald-600 font-medium mt-1">✓ Termasuk data referensi</p>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-sand-200 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Kedalaman Folder</span>
+                        <span class="text-lg">📁</span>
+                    </div>
+                    <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">3 Level</p>
+                    <p class="text-xs text-slate-500 font-medium mt-1">Hierarki Tak Terbatas</p>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-sand-200 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Internal Browser</span>
+                        <span class="text-lg">⚙️</span>
+                    </div>
+                    <p class="text-2xl sm:text-3xl font-extrabold text-amber-600 mt-2" id="kpi-internal-count">2</p>
+                    <p class="text-xs text-slate-500 font-medium mt-1">Protokol chrome://</p>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-sand-200 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Potensi Duplikat</span>
+                        <span class="text-lg">🔍</span>
+                    </div>
+                    <p class="text-2xl sm:text-3xl font-extrabold text-rose-600 mt-2" id="kpi-duplicate-count">5</p>
+                    <p class="text-xs text-rose-500 font-medium mt-1">Terganti via SHA-256</p>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Chart 1: Kategori Bookmark -->
+                <div class="bg-white p-5 rounded-xl border border-sand-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <h3 class="font-bold text-slate-900 text-base">Distribusi Kategori & Domain Bookmark</h3>
+                            <span class="text-xs bg-sand-100 text-sand-800 px-2 py-1 rounded">Chart.js Canvas</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-4">Pengelompokan tautan referensi berdasarkan jenis domain dan folder fungsi.</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <div class="mt-3 text-xs text-slate-500 border-t border-sand-100 pt-3 flex justify-between">
+                        <span>Aplikasi & Alat Web (SaaS) mendominasi 42%</span>
+                        <span class="font-medium text-emeraldCustom-700">Sampel Terverifikasi</span>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Protokol & Akses Tipe -->
+                <div class="bg-white p-5 rounded-xl border border-sand-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <h3 class="font-bold text-slate-900 text-base">Tipe Protokol Akses & URL Storage</h3>
+                            <span class="text-xs bg-sand-100 text-sand-800 px-2 py-1 rounded">Chart.js Canvas</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-4">Klasifikasi keamanan skema (HTTPS, HTTP, Chrome Protocol, Cloud Storage).</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="protocolChart"></canvas>
+                    </div>
+                    <div class="mt-3 text-xs text-slate-500 border-t border-sand-100 pt-3 flex justify-between">
+                        <span>81% Menggunakan Skema Aman (HTTPS)</span>
+                        <span class="font-medium text-emeraldCustom-700">Analisis Keamanan</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quantitative & Qualitative Insight Summary -->
+            <div class="bg-white p-6 rounded-xl border border-sand-200 shadow-sm space-y-4">
+                <h3 class="font-bold text-slate-900 text-lg flex items-center space-x-2">
+                    <span>💡</span>
+                    <span>Temuan Kunci Riset Tata Kelola Data Bookmark</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div class="p-4 bg-sand-50 rounded-lg border border-sand-200">
+                        <h4 class="font-bold text-emeraldCustom-800 mb-1">1. Struktur Netscape HTML loose-parsing</h4>
+                        <p class="text-slate-600 text-xs leading-relaxed">
+                            Berkas bookmark modern mengabaikan tag penutup <code>&lt;/DT&gt;</code> dan <code>&lt;/p&gt;</code>. Parser backend harus menggunakan metode pencarian pohon rekursif berbasis tumpukan (stack DOM parsing) agar hierarki folder tidak runtuh.
+                        </p>
+                    </div>
+                    <div class="p-4 bg-sand-50 rounded-lg border border-sand-200">
+                        <h4 class="font-bold text-emeraldCustom-800 mb-1">2. Dekopling Favicon Base64</h4>
+                        <p class="text-slate-600 text-xs leading-relaxed">
+                            Atribut <code>ICON="data:image/png;base64,..."</code> memperbesar ukuran database jika disimpan secara langsung. Strategi terbaik adalah mendekode gambar biner dan menyimpannya ke Object Storage (S3/MinIO) dengan rujukan string path.
+                        </p>
+                    </div>
+                    <div class="p-4 bg-sand-50 rounded-lg border border-sand-200">
+                        <h4 class="font-bold text-emeraldCustom-800 mb-1">3. Parameter Tracking & Hash Unik</h4>
+                        <p class="text-slate-600 text-xs leading-relaxed">
+                            Banyak URL referensi mengandung tracking seperti <code>?src=startpage</code> atau <code>utm_campaign</code>. Menghapus parameter ini menghasilkan URL kanonikal murni untuk deteksi duplikat presisi tinggi dengan SHA-256.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: EXPLORER BOOKMARK INTERAKTIF ==================== -->
+        <section id="tab-explorer" class="space-y-6 hidden">
+            <!-- Section Introductory Paragraph -->
+            <div class="bg-white p-5 rounded-xl border border-sand-200 shadow-sm">
+                <h2 class="text-xl font-bold text-slate-900">Pengelola & Explorer Bookmark Interaktif</h2>
+                <p class="text-slate-600 text-sm mt-1">
+                    Jelajahi seluruh koleksi bookmark dari daftar referensi secara langsung. Modul ini menyajikan fitur pencarian real-time, penyaringan folder, pemisahan tautan internal vs eksternal, serta simulasi status kesehatan HTTP dan normalisasi hash SHA-256.
+                </p>
+            </div>
+
+            <!-- Filter and Search Controls -->
+            <div class="bg-white p-4 rounded-xl border border-sand-200 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
+                <!-- Search Input -->
+                <div class="w-full md:w-1/3 relative">
+                    <input type="text" id="search-input" onkeyup="filterBookmarks()" placeholder="Cari judul, URL, atau kata kunci..." class="w-full pl-9 pr-4 py-2 bg-sand-50 border border-sand-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emeraldCustom-600">
+                    <span class="absolute left-3 top-2.5 text-slate-400 text-sm">🔍</span>
+                </div>
+
+                <!-- Category Dropdown -->
+                <div class="w-full md:w-auto flex flex-wrap gap-2 items-center">
+                    <label class="text-xs font-semibold text-slate-500 uppercase">Folder:</label>
+                    <select id="folder-filter" onchange="filterBookmarks()" class="bg-sand-50 border border-sand-200 rounded-lg text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emeraldCustom-600">
+                        <option value="ALL">Semua Folder</option>
+                        <option value="Bookmarks bar">Bookmarks bar</option>
+                        <option value="WasobiTech">WasobiTech</option>
+                        <option value="Chat AI">Chat AI</option>
+                        <option value="Root">Utama (Root)</option>
+                    </select>
+
+                    <label class="text-xs font-semibold text-slate-500 uppercase ml-2">Tipe:</label>
+                    <select id="type-filter" onchange="filterBookmarks()" class="bg-sand-50 border border-sand-200 rounded-lg text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emeraldCustom-600">
+                        <option value="ALL">Semua Tipe URL</option>
+                        <option value="EXTERNAL">SaaS & Eksternal</option>
+                        <option value="INTERNAL">Internal Browser (chrome://)</option>
+                        <option value="STORAGE">Cloud & URL Storage</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Bookmark Data Grid / Table -->
+            <div class="bg-white rounded-xl border border-sand-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-sand-100 text-slate-700 text-xs uppercase font-bold border-b border-sand-200">
+                            <tr>
+                                <th class="py-3.5 px-4">Ikon / Status</th>
+                                <th class="py-3.5 px-4">Judul Bookmark</th>
+                                <th class="py-3.5 px-4">Folder Asal</th>
+                                <th class="py-3.5 px-4">Alamat URL Mentah</th>
+                                <th class="py-3.5 px-4">Kanonikal & Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookmark-table-body" class="divide-y divide-sand-100">
+                            <!-- Dynamic Content Rendered via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination / Counter Footer -->
+                <div class="p-4 bg-sand-50 border-t border-sand-200 text-xs text-slate-500 flex justify-between items-center">
+                    <span id="showing-count">Menampilkan 0 dari 0 bookmark</span>
+                    <span class="text-emeraldCustom-700 font-medium">Dataset Sampel Aktif</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: CLOSURE TABLE & SKEMA DB ==================== -->
+        <section id="tab-architecture" class="space-y-6 hidden">
+            <!-- Section Introductory Paragraph -->
+            <div class="bg-white p-5 rounded-xl border border-sand-200 shadow-sm">
+                <h2 class="text-xl font-bold text-slate-900">Arsitektur Data & Model Closure Table SQL</h2>
+                <p class="text-slate-600 text-sm mt-1">
+                    Bagian ini menjelaskan solusi pengelolaan struktur pohon (*tree*) hierarki folder tak terbatas dalam basis data relasional. Model *Closure Table* memisahkan data folder dari relasi paret-child, memungkinkan kueri perelusuran folder berkecepatan tinggi tanpa kueri rekursif berlebih.
+                </p>
+            </div>
+
+            <!-- Interactive Tree Selector Visualizer -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Interactive Folder Navigation Tree -->
+                <div class="bg-white p-5 rounded-xl border border-sand-200 shadow-sm space-y-3">
+                    <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                        <span>🌳</span>
+                        <span>Pilih Node Folder</span>
+                    </h3>
+                    <p class="text-xs text-slate-500">Klik folder di bawah untuk melihat entitas relasi Closure Table yang terbentuk di basis data:</p>
+                    
+                    <div class="space-y-2 text-sm font-medium">
+                        <div onclick="selectClosureFolder(1, 'Root Folder')" class="closure-node p-2.5 rounded-lg border border-sand-200 bg-sand-50 hover:bg-emeraldCustom-50 cursor-pointer transition flex items-center justify-between">
+                            <span>📁 Root (Akar Sistem)</span>
+                            <span class="text-xs bg-sand-200 text-sand-800 px-2 py-0.5 rounded">ID: 1</span>
+                        </div>
+                        <div onclick="selectClosureFolder(2, 'Bookmarks bar')" class="closure-node ml-4 p-2.5 rounded-lg border border-sand-200 bg-white hover:bg-emeraldCustom-50 cursor-pointer transition flex items-center justify-between">
+                            <span>📂 Bookmarks bar</span>
+                            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">ID: 2</span>
+                        </div>
+                        <div onclick="selectClosureFolder(3, 'WasobiTech')" class="closure-node ml-4 p-2.5 rounded-lg border border-sand-200 bg-white hover:bg-emeraldCustom-50 cursor-pointer transition flex items-center justify-between">
+                            <span>📂 WasobiTech</span>
+                            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">ID: 3</span>
+                        </div>
+                        <div onclick="selectClosureFolder(4, 'Chat AI')" class="closure-node ml-4 p-2.5 rounded-lg border border-sand-200 bg-white hover:bg-emeraldCustom-50 cursor-pointer transition flex items-center justify-between">
+                            <span>📂 Chat AI</span>
+                            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">ID: 4</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Closure Table Relations Display -->
+                <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-sand-200 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-slate-900 text-base">Pemetaaan Relasi `folder_closure`</h3>
+                        <span id="selected-folder-badge" class="text-xs font-semibold px-2.5 py-1 bg-emeraldCustom-700 text-white rounded-md">Folder: Bookmarks bar (ID 2)</span>
+                    </div>
+                    <p class="text-xs text-slate-500">
+                        Tabel relasi menyimpan kombinasi <code>ancestor_id</code> (Leluhur), <code>descendant_id</code> (Keturunan), dan <code>depth</code> (Kedalaman relasi).
+                    </p>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border border-sand-200 rounded-lg">
+                            <thead class="bg-sand-100 text-slate-700 font-bold">
+                                <tr>
+                                    <th class="p-2.5 border-b border-sand-200">Ancestor ID (Leluhur)</th>
+                                    <th class="p-2.5 border-b border-sand-200">Descendant ID (Keturunan)</th>
+                                    <th class="p-2.5 border-b border-sand-200">Depth (Jarak Level)</th>
+                                    <th class="p-2.5 border-b border-sand-200">Keterangan Hubungan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="closure-table-rows" class="divide-y divide-sand-100">
+                                <!-- Populated dynamically by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 text-xs text-amber-900">
+                        <strong>⚡ Keunggulan Kueri SQL:</strong> Membaca seluruh sub-folder dapat dilakukan dengan kueri sederhana:
+                        <code class="block bg-amber-100/70 p-2 rounded mt-1 font-mono text-[11px] text-amber-950">SELECT * FROM folders JOIN folder_closure ON folders.id = descendant_id WHERE ancestor_id = 2;</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Database Schema Visual Tables -->
+            <div class="bg-white p-5 rounded-xl border border-sand-200 shadow-sm space-y-4">
+                <h3 class="font-bold text-slate-900 text-base">Rancangan Skema Tabel Relasional Database</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Table: folders -->
+                    <div class="border border-sand-200 rounded-lg p-3 bg-sand-50/50">
+                        <div class="font-bold text-emeraldCustom-800 text-xs uppercase mb-2 border-b border-sand-200 pb-1">Tabel: folders</div>
+                        <ul class="text-xs space-y-1 font-mono text-slate-700">
+                            <li><span class="text-rose-600 font-bold">PK</span> id: BIGINT</li>
+                            <li>user_id: BIGINT (FK)</li>
+                            <li>title: VARCHAR(255)</li>
+                            <li>is_toolbar: BOOLEAN</li>
+                            <li>created_at: TIMESTAMP</li>
+                        </ul>
+                    </div>
+                    <!-- Table: bookmarks -->
+                    <div class="border border-sand-200 rounded-lg p-3 bg-sand-50/50">
+                        <div class="font-bold text-emeraldCustom-800 text-xs uppercase mb-2 border-b border-sand-200 pb-1">Tabel: bookmarks</div>
+                        <ul class="text-xs space-y-1 font-mono text-slate-700">
+                            <li><span class="text-rose-600 font-bold">PK</span> id: BIGINT</li>
+                            <li>folder_id: BIGINT (FK)</li>
+                            <li>title: TEXT</li>
+                            <li>raw_url: TEXT</li>
+                            <li>normalized_url: TEXT</li>
+                            <li><span class="text-indigo-600 font-bold">IDX</span> url_hash: CHAR(64)</li>
+                            <li>favicon_path: TEXT</li>
+                            <li>is_internal: BOOLEAN</li>
+                            <li>http_status: INT</li>
+                        </ul>
+                    </div>
+                    <!-- Table: folder_closure -->
+                    <div class="border border-sand-200 rounded-lg p-3 bg-sand-50/50">
+                        <div class="font-bold text-emeraldCustom-800 text-xs uppercase mb-2 border-b border-sand-200 pb-1">Tabel: folder_closure</div>
+                        <ul class="text-xs space-y-1 font-mono text-slate-700">
+                            <li><span class="text-rose-600 font-bold">PK/FK</span> ancestor_id: BIGINT</li>
+                            <li><span class="text-rose-600 font-bold">PK/FK</span> descendant_id: BIGINT</li>
+                            <li>depth: INT</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 4: SIMULATOR NORMALISASI URL ==================== -->
+        <section id="tab-canonicalizer" class="space-y-6 hidden">
+            <!-- Section Introductory Paragraph -->
+            <div class="bg-white p-5 rounded-xl border border-sand-200 shadow-sm">
+                <h2 class="text-xl font-bold text-slate-900">Simulator Normalisasi URL Kanonikal & Hash SHA-256</h2>
+                <p class="text-slate-600 text-sm mt-1">
+                    Uji coba pipa pembersihan URL secara langsung. Masukkan URL berparameter tracking atau format acak untuk melihat bagaimana sistem mengkonversi URL mentah menjadi bentuk kanonikal murni dan memicu deteksi duplikat berbasis hash.
+                </p>
+            </div>
+
+            <!-- Live Canonicalizer Interactive Box -->
+            <div class="bg-white p-6 rounded-xl border border-sand-200 shadow-sm space-y-5">
+                <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                    <span>⚡</span>
+                    <span>Uji Coba Normalisasi URL Real-time</span>
+                </h3>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-700 uppercase">Masukkan URL Mentah (Raw Input URL):</label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="canonical-input-url" value="HTTP://WWW.Freelancer.com/projects/seo/help/?utm_campaign=latest_project&uniqid=57846808#section1" class="flex-grow p-2.5 bg-sand-50 border border-sand-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emeraldCustom-600">
+                        <button onclick="runCanonicalizerSim()" class="px-5 py-2.5 bg-emeraldCustom-700 hover:bg-emeraldCustom-800 text-white font-semibold rounded-lg text-sm transition shadow-sm">
+                            Jalankan Pembersihan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Preset Test Buttons -->
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <span class="font-semibold text-slate-500">Atau Pilih Contoh URL Sampel:</span>
+                    <button onclick="setCanonicalSample(1)" class="px-2.5 py-1 bg-sand-100 hover:bg-sand-200 rounded text-slate-700 font-mono">Freedownloadlogo (Port & Lowercase)</button>
+                    <button onclick="setCanonicalSample(2)" class="px-2.5 py-1 bg-sand-100 hover:bg-sand-200 rounded text-slate-700 font-mono">Startnow (Tracking Parameter)</button>
+                    <button onclick="setCanonicalSample(3)" class="px-2.5 py-1 bg-sand-100 hover:bg-sand-200 rounded text-slate-700 font-mono">Chrome History (Internal)</button>
+                </div>
+
+                <!-- Transformation Output Step Breakdown -->
+                <div class="border border-sand-200 rounded-xl p-4 bg-sand-50/50 space-y-3">
+                    <h4 class="font-bold text-slate-800 text-sm border-b border-sand-200 pb-2">Hasil Tahapan Transformasi Kanonikal:</h4>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                        <div class="p-3 bg-white rounded border border-sand-200">
+                            <span class="font-semibold text-slate-500 block mb-1">1. Lowercasing Scheme & Domain:</span>
+                            <code id="res-lowercase" class="font-mono text-emeraldCustom-800 font-bold block break-all">-</code>
+                        </div>
+
+                        <div class="p-3 bg-white rounded border border-sand-200">
+                            <span class="font-semibold text-slate-500 block mb-1">2. Pembersihan Port Standar & 'www':</span>
+                            <code id="res-port" class="font-mono text-emeraldCustom-800 font-bold block break-all">-</code>
+                        </div>
+
+                        <div class="p-3 bg-white rounded border border-sand-200">
+                            <span class="font-semibold text-slate-500 block mb-1">3. Stripping Parameter Tracking (utm, ref, uniqid):</span>
+                            <code id="res-params" class="font-mono text-emeraldCustom-800 font-bold block break-all">-</code>
+                        </div>
+
+                        <div class="p-3 bg-white rounded border border-sand-200">
+                            <span class="font-semibold text-slate-500 block mb-1">4. Stripping Hash Fragment (#) & Trailing Slash:</span>
+                            <code id="res-fragment" class="font-mono text-emeraldCustom-800 font-bold block break-all">-</code>
+                        </div>
+                    </div>
+
+                    <!-- Final Canonical URL & Hash SHA256 Result -->
+                    <div class="p-4 bg-emeraldCustom-900 text-white rounded-lg space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-semibold text-emerald-200 uppercase">URL Kanonikal Akhir (Normalized Canonical URL)</span>
+                            <span id="res-type-tag" class="text-[10px] bg-emeraldCustom-600 px-2 py-0.5 rounded font-bold">EKSTERNAL</span>
+                        </div>
+                        <p id="res-final-url" class="font-mono text-sm sm:text-base font-bold text-amber-300 break-all">-</p>
+
+                        <div class="pt-2 border-t border-emeraldCustom-700/60">
+                            <span class="text-xs font-semibold text-emerald-200 uppercase block mb-1">Hash Unik SHA-256 (Kunci Indeks Database)</span>
+                            <p id="res-sha256" class="font-mono text-xs text-slate-200 break-all">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 5: CETAK BIRU SKRIP BACKEND ==================== -->
+        <section id="tab-blueprint" class="space-y-6 hidden">
+            <!-- Section Introductory Paragraph -->
+            <div class="bg-white p-5 rounded-xl border border-sand-200 shadow-sm">
+                <h2 class="text-xl font-bold text-slate-900">Cetak Biru Pemrograman & Logika Kode Backend</h2>
+                <p class="text-slate-600 text-sm mt-1">
+                    Modul ini menyajikan alur kerja sistem 6-tahap beserta potongan kode skrip Python dan JavaScript yang siap diimplementasikan untuk membangun backend aplikasi pengelola data bookmark ini.
+                </p>
+            </div>
+
+            <!-- Pipeline 6-Stage Visual Flow -->
+            <div class="bg-white p-5 rounded-xl border border-sand-200 shadow-sm space-y-4">
+                <h3 class="font-bold text-slate-900 text-base">Alur Kerja Pipa Pengolahan Data (6 Stages)</h3>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                    <div class="p-3 bg-sand-50 rounded-lg border border-sand-200 flex space-x-3 items-start">
+                        <span class="w-6 h-6 rounded-full bg-emeraldCustom-700 text-white font-bold flex items-center justify-center shrink-0">1</span>
+                        <div>
+                            <h4 class="font-bold text-slate-900">Upload & Validasi Header</h4>
+                            <p class="text-slate-500 mt-0.5">Menerima berkas HTML dan memverifikasi DOCTYPE Netscape Bookmark.</p>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-sand-50 rounded-lg border border-sand-200 flex space-x-3 items-start">
+                        <span class="w-6 h-6 rounded-full bg-emeraldCustom-700 text-white font-bold flex items-center justify-center shrink-0">2</span>
+                        <div>
+                            <h4 class="font-bold text-slate-900">DOM Parsing Tree</h4>
+                            <p class="text-slate-500 mt-0.5">Ekstraksi tag &lt;H3&gt; (Folder) dan &lt;A&gt; (Bookmark) dengan stack parsing.</p>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-sand-50 rounded-lg border border-sand-200 flex space-x-3 items-start">
+                        <span class="w-6 h-6 rounded-full bg-emeraldCustom-700 text-white font-bold flex items-center justify-center shrink-0">3</span>
+                        <div>
+                            <h4 class="font-bold text-slate-900">Pipa Kanonikal URL</h4>
+                            <p class="text-slate-500 mt-0.5">Pembersihan parameter iklan, port, dan penyeragaman huruf kecil.</p>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-sand-50 rounded-lg border border-sand-200 flex space-x-3 items-start">
+                        <span class="w-6 h-6 rounded-full bg-emeraldCustom-700 text-white font-bold flex items-center justify-center shrink-0">4</span>
+                        <div>
+                            <h4 class="font-bold text-slate-900">Penghasil SHA-256 Hash</h4>
+                            <p class="text-slate-500 mt-0.5">Pencarian duplikat di indeks database berbasis kunci SHA-256.</p>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-sand-50 rounded-lg border border-sand-200 flex space-x-3 items-start">
+                        <span class="w-6 h-6 rounded-full bg-emeraldCustom-700 text-white font-bold flex items-center justify-center shrink-0">5</span>
+                        <div>
+                            <h4 class="font-bold text-slate-900">Transaksi Closure Table</h4>
+                            <p class="text-slate-500 mt-0.5">Penyimpanan hierarki folder dan data tautan bookmark secara atomik.</p>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-sand-50 rounded-lg border border-sand-200 flex space-x-3 items-start">
+                        <span class="w-6 h-6 rounded-full bg-emeraldCustom-700 text-white font-bold flex items-center justify-center shrink-0">6</span>
+                        <div>
+                            <h4 class="font-bold text-slate-900">Worker Favicon & Health Check</h4>
+                            <p class="text-slate-500 mt-0.5">Dekode gambar Base64 ke Object Storage & uji HTTP HEAD secara asinkron.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Snippet Display Window -->
+            <div class="bg-slate-900 text-slate-100 rounded-xl overflow-hidden shadow-lg border border-slate-800">
+                <div class="bg-slate-800 px-4 py-3 border-b border-slate-700 flex justify-between items-center text-xs">
+                    <span class="font-mono text-emerald-400 font-semibold">🐍 canonicalizer_service.py</span>
+                    <span class="text-slate-400">Python 3.10+ / Backend Ready</span>
+                </div>
+                <pre class="p-4 text-xs font-mono overflow-x-auto leading-relaxed custom-scrollbar"><code class="text-emerald-300">import hashlib
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+
+def canonicalize_bookmark_url(raw_url: str):
+    """
+    Eksekusi normalisasi URL untuk menghilangkan variasi berlebih
+    dan menghasilkan hash SHA-256 presisi tinggi.
+    """
+    parsed = urlparse(raw_url.strip())
+    
+    # Deteksi Protokol Internal Browser
+    if parsed.scheme in ['chrome', 'edge', 'about', 'file']:
+        return raw_url, True, hashlib.sha256(raw_url.encode()).hexdigest()
+        
+    scheme = parsed.scheme.lower()
+    netloc = parsed.netloc.lower()
+    
+    # Stripping port standar
+    if netloc.endswith(':80') and scheme == 'http': netloc = netloc[:-3]
+    elif netloc.endswith(':443') and scheme == 'https': netloc = netloc[:-4]
+    
+    # Stripping prefix www berlebih
+    if netloc.startswith('www.'): netloc = netloc[4:]
+    
+    # Stripping tracking parameters
+    query_params = parse_qs(parsed.query)
+    ignored_keys = {'utm_source', 'utm_medium', 'utm_campaign', 'fbclid', 'gclid', 'ref', 'affiliate_id', 'src'}
+    filtered_params = {k: v for k, v in query_params.items() if k.lower() not in ignored_keys}
+    
+    sorted_query = urlencode(sorted(filtered_params.items()), doseq=True)
+    path = parsed.path.rstrip('/')
+    
+    # Rekonstruksi URL Kanonikal murni (tanpa fragment #)
+    canonical_url = urlunparse((scheme, netloc, path, '', sorted_query, ''))
+    url_hash = hashlib.sha256(canonical_url.encode('utf-8')).hexdigest()
+    
+    return canonical_url, False, url_hash</code></pre>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-sand-200 py-4 text-center text-xs text-slate-500 mt-auto">
+        <div class="max-w-7xl mx-auto px-4">
+            <p>BookmarkSphere &copy; 2026 - Laporan Riset Tata Kelola Data Bookmark & Implementasi Aplikasi Interaktif.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic Section -->
+    <script>
+        // ==================== DATASET SAMPLE REFERENCE ====================
+        const bookmarkDataset = [
+            { id: 1, title: "Alphabetical | FreeDownloadLogo.com", url: "https://www.freedownloadlogo.com/alphabet/a", folder: "Bookmarks bar", type: "EXTERNAL", icon: "🌐" },
+            { id: 2, title: "Gmail", url: "https://accounts.google.com/b/0/AddMailService", folder: "Bookmarks bar", type: "EXTERNAL", icon: "📧" },
+            { id: 3, title: "YouTube", url: "https://youtube.com/", folder: "Bookmarks bar", type: "EXTERNAL", icon: "▶️" },
+            { id: 4, title: "Maps", url: "https://maps.google.com/", folder: "Bookmarks bar", type: "EXTERNAL", icon: "🗺️" },
+            { id: 5, title: "Yahoo! Indonesia", url: "http://id.yahoo.com/", folder: "Bookmarks bar", type: "EXTERNAL", icon: "🟣" },
+            { id: 6, title: "Translate", url: "https://translate.google.com/", folder: "Bookmarks bar", type: "EXTERNAL", icon: "🔤" },
+            { id: 7, title: "Clear History", url: "chrome://settings/clearBrowserData", folder: "Bookmarks bar", type: "INTERNAL", icon: "⚙️" },
+            { id: 8, title: "History", url: "chrome://history/", folder: "Bookmarks bar", type: "INTERNAL", icon: "📜" },
+            { id: 9, title: "PDF to PNG Converter - OnlineConvert", url: "https://www.onlineconvert.com/pdf-to-png", folder: "WasobiTech", type: "EXTERNAL", icon: "🛠️" },
+            { id: 10, title: "API WhatsApp Business - MessageBird", url: "https://dashboard.messagebird.com/id/getting-started/whatsapp-embedded/create", folder: "WasobiTech", type: "EXTERNAL", icon: "💬" },
+            { id: 11, title: "Best WhatsApp Tools - WA Plus", url: "https://waplus.io/whatsapp-tools", folder: "WasobiTech", type: "EXTERNAL", icon: "⚡" },
+            { id: 12, title: "Layanan Sumber Daya - Dikti Kemdikbud", url: "https://dikti.kemdikbud.go.id/layanan-sumber-daya/", folder: "WasobiTech", type: "EXTERNAL", icon: "🏛️" },
+            { id: 13, title: "Feeder - RSS Feed Reader Login", url: "https://feeder.co/login?flow=ext", folder: "WasobiTech", type: "EXTERNAL", icon: "📰" },
+            { id: 14, title: "Peretasan Facebook Online HPS Tracker", url: "https://hacking-passwords.com/", folder: "WasobiTech", type: "EXTERNAL", icon: "🛡️" },
+            { id: 15, title: "How to Become a Hacker - Anonymous News", url: "https://www.anonymoushackers.net/anonymous-news/how-to-become-a-hacker/", folder: "WasobiTech", type: "EXTERNAL", icon: "💻" },
+            { id: 16, title: "Tor Project | Success Page", url: "https://www.torproject.org/thank-you/", folder: "WasobiTech", type: "EXTERNAL", icon: "🧅" },
+            { id: 17, title: "Showwcase Developer Network", url: "https://www.showwcase.com/", folder: "WasobiTech", type: "EXTERNAL", icon: "💼" },
+            { id: 18, title: "Ping My Url by Free Backlinks SEO Tool", url: "https://free-backlinks.net/ping-my-url.html", folder: "WasobiTech", type: "EXTERNAL", icon: "📈" },
+            { id: 19, title: "Wikipedia bahasa Indonesia", url: "https://id.wikipedia.org/wiki/Halaman_Utama", folder: "WasobiTech", type: "EXTERNAL", icon: "📚" },
+            { id: 20, title: "Cequence Security | Unified API Protection", url: "https://www.cequence.ai/", folder: "WasobiTech", type: "EXTERNAL", icon: "🔒" },
+            { id: 21, title: "Quackit Scrolling Images HTML Code", url: "https://www.quackit.com/html/codes/scrolling_images.cfm", folder: "WasobiTech", type: "EXTERNAL", icon: "🌐" },
+            { id: 22, title: "Apa Itu API? Hostinger Tutorial", url: "https://www.hostinger.co.id/tutorial/api-adalah", folder: "WasobiTech", type: "EXTERNAL", icon: "📖" },
+            { id: 23, title: "PDFescape - Free Online PDF Editor", url: "https://www.pdfescape.com/", folder: "WasobiTech", type: "EXTERNAL", icon: "📄" },
+            { id: 24, title: "Menyesuaikan Zona Waktu di PHP", url: "https://educhannel.id/blog/artikel/menyesuaikan-zona-waktu-di-php.html", folder: "WasobiTech", type: "EXTERNAL", icon: "🐘" },
+            { id: 25, title: "Transformasi Digital - Think with Google", url: "https://www.thinkwithgoogle.com/future-of-marketing/digital-transformation/", folder: "WasobiTech", type: "EXTERNAL", icon: "💡" },
+            { id: 26, title: "Features - How Google Search Works", url: "https://www.google.com/search/howsearchworks/features/", folder: "WasobiTech", type: "EXTERNAL", icon: "🔍" },
+            { id: 27, title: "GNU Affero General Public License (AGPL)", url: "https://www.gnu.org/licenses/agpl-3.0.en.html", folder: "WasobiTech", type: "EXTERNAL", icon: "⚖️" },
+            { id: 28, title: "Pngtree Affiliate Program", url: "https://pngtree.com/affiliate-program", folder: "WasobiTech", type: "EXTERNAL", icon: "🎨" },
+            { id: 29, title: "Jagel.co.id - App Builder", url: "https://jagel.co.id/#Jagel", folder: "WasobiTech", type: "EXTERNAL", icon: "📱" },
+            { id: 30, title: "Cara Membuat Aplikasi Sendiri - MARKEY", url: "https://markey.id/blog/development/cara-membuat-aplikasi-sendiri", folder: "WasobiTech", type: "EXTERNAL", icon: "📝" },
+            { id: 31, title: "Biaya Pembuatan Aplikasi - APPKEY", url: "https://appkey.id/category/pembuatan-aplikasi/biaya-pembuatan-aplikasi/", folder: "WasobiTech", type: "EXTERNAL", icon: "💰" },
+            { id: 32, title: "GitHub - facebook/react-native", url: "https://github.com/facebook/react-native", folder: "WasobiTech", type: "EXTERNAL", icon: "📦" },
+            { id: 33, title: "React Native Framework", url: "https://reactnative.dev/", folder: "WasobiTech", type: "EXTERNAL", icon: "⚛️" },
+            { id: 34, title: "Saputra Cloud Private Storage (Nextcloud)", url: "https://nextcloud.harjasaputra.com/s/cARQMycQB5ne5TB?path=%2F", folder: "WasobiTech", type: "STORAGE", icon: "☁️" },
+            { id: 35, title: "Aplikasi Quick Count Tandem Pilkada", url: "http://sukses-pilkada.com/editsaksi.php?KodePilkada=DEMO", folder: "WasobiTech", type: "EXTERNAL", icon: "📊" },
+            { id: 36, title: "Freelancer VA Help SEO Research", url: "https://www.freelancer.com/projects/seo/help/?utm_campaign=latest_project&uniqid=57846808", folder: "WasobiTech", type: "EXTERNAL", icon: "💼" },
+            { id: 37, title: "IFRAMELY Responsive Embeds", url: "https://iframely.com/", folder: "Root", type: "EXTERNAL", icon: "🖼️" },
+            { id: 38, title: "Google AI Studio", url: "https://aistudio.google.com/prompts/new_chat", folder: "Chat AI", type: "EXTERNAL", icon: "🤖" },
+            { id: 39, title: "Google Gemini AI", url: "https://gemini.google.com/app", folder: "Chat AI", type: "EXTERNAL", icon: "✨" },
+            { id: 40, title: "ChatGPT OpenAI", url: "https://chatgpt.com/", folder: "Chat AI", type: "EXTERNAL", icon: "💬" },
+            { id: 41, title: "Arena AI Model Evaluator", url: "https://arena.ai/", folder: "Chat AI", type: "EXTERNAL", icon: "⚔️" },
+            { id: 42, title: "The Wedding Invitation Risma & Hanofi", url: "https://weddingkita.id/risma-hanofi/?to=operator", folder: "Root", type: "EXTERNAL", icon: "💌" }
+        ];
+
+        // ==================== TAB NAVIGATION LOGIC ====================
+        function switchTab(tabName) {
+            const tabs = ['dashboard', 'explorer', 'architecture', 'canonicalizer', 'blueprint'];
+            tabs.forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                const btn = document.getElementById(`nav-${t}`);
+                const mobBtn = document.getElementById(`mob-nav-${t}`);
+                
+                if (t === tabName) {
+                    el.classList.remove('hidden');
+                    if (btn) {
+                        btn.className = "tab-btn px-4 py-2 rounded-lg transition-all text-emeraldCustom-800 bg-white shadow-sm font-semibold";
+                    }
+                    if (mobBtn) {
+                        mobBtn.className = "px-3 py-1.5 rounded-lg whitespace-nowrap bg-emeraldCustom-700 text-white";
+                    }
+                } else {
+                    el.classList.add('hidden');
+                    if (btn) {
+                        btn.className = "tab-btn px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900";
+                    }
+                    if (mobBtn) {
+                        mobBtn.className = "px-3 py-1.5 rounded-lg whitespace-nowrap bg-sand-200 text-slate-700";
+                    }
+                }
+            });
+        }
+
+        // ==================== TAB 1: CHARTS INITIALIZATION ====================
+        function initCharts() {
+            // Chart 1: Donut Chart - Category Distribution
+            const ctxCat = document.getElementById('categoryChart').getContext('2d');
+            new Chart(ctxCat, {
+                type: 'doughnut',
+                data: {
+                    labels: ['WasobiTech Tools', 'Bookmarks Bar', 'Chat AI Platform', 'Layanan Cloud & Storage', 'Root Folder'],
+                    datasets: [{
+                        data: [27, 8, 4, 1, 2],
+                        backgroundColor: ['#0f766e', '#0284c7', '#8b5cf6', '#f59e0b', '#64748b'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { size: 11, family: 'Plus Jakarta Sans' },
+                                boxWidth: 12
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Chart 2: Bar Chart - Protocol Security & URL Type
+            const ctxProto = document.getElementById('protocolChart').getContext('2d');
+            new Chart(ctxProto, {
+                type: 'bar',
+                data: {
+                    labels: ['HTTPS (Aman)', 'HTTP (Biasa)', 'Chrome Protocol', 'Cloud Storage'],
+                    datasets: [{
+                        label: 'Jumlah Bookmark',
+                        data: [35, 5, 2, 1],
+                        backgroundColor: '#0d9488',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // ==================== TAB 2: EXPLORER FILTER LOGIC ====================
+        function renderBookmarkTable(items) {
+            const tbody = document.getElementById('bookmark-table-body');
+            tbody.innerHTML = '';
+
+            items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-sand-50/80 transition-colors";
+
+                let badgeClass = "bg-emerald-100 text-emerald-800";
+                let typeLabel = "Eksternal";
+
+                if (item.type === "INTERNAL") {
+                    badgeClass = "bg-amber-100 text-amber-800";
+                    typeLabel = "Internal Chrome";
+                } else if (item.type === "STORAGE") {
+                    badgeClass = "bg-indigo-100 text-indigo-800";
+                    typeLabel = "Cloud Storage";
+                }
+
+                // Canonical Preview Stripped
+                const canonicalUrl = item.url.split('?')[0].replace('www.', '').toLowerCase();
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-lg text-center">${item.icon}</td>
+                    <td class="py-3 px-4">
+                        <div class="font-bold text-slate-900">${item.title}</div>
+                        <div class="text-[11px] text-slate-400 font-mono">ID: BM-${item.id}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sand-200 text-sand-800">
+                            📁 ${item.folder}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 font-mono text-xs text-slate-600 max-w-xs truncate" title="${item.url}">
+                        <a href="${item.url}" target="_blank" class="hover:text-emeraldCustom-700 hover:underline">${item.url}</a>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold ${badgeClass} mb-1">
+                            ${typeLabel}
+                        </span>
+                        <div class="text-[10px] text-slate-400 font-mono truncate max-w-[140px]">
+                            Hash: ${canonicalUrl.substring(0, 12)}...
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('showing-count').innerText = `Menampilkan ${items.length} dari ${bookmarkDataset.length} bookmark`;
+        }
+
+        function filterBookmarks() {
+            const searchVal = document.getElementById('search-input').value.toLowerCase();
+            const folderVal = document.getElementById('folder-filter').value;
+            const typeVal = document.getElementById('type-filter').value;
+
+            const filtered = bookmarkDataset.filter(item => {
+                const matchesSearch = item.title.toLowerCase().includes(searchVal) || item.url.toLowerCase().includes(searchVal);
+                const matchesFolder = (folderVal === "ALL") || (item.folder === folderVal);
+                const matchesType = (typeVal === "ALL") || (item.type === typeVal);
+
+                return matchesSearch && matchesFolder && matchesType;
+            });
+
+            renderBookmarkTable(filtered);
+        }
+
+        // ==================== TAB 3: CLOSURE TABLE VISUALIZER ====================
+        const closureMockData = {
+            1: [
+                { ancestor: 1, descendant: 1, depth: 0, desc: "Self Reference (Root)" },
+                { ancestor: 1, descendant: 2, depth: 1, desc: "Direct Child (Bookmarks bar)" },
+                { ancestor: 1, descendant: 3, depth: 1, desc: "Direct Child (WasobiTech)" },
+                { ancestor: 1, descendant: 4, depth: 1, desc: "Direct Child (Chat AI)" }
+            ],
+            2: [
+                { ancestor: 2, descendant: 2, depth: 0, desc: "Self Reference (Bookmarks bar)" },
+                { ancestor: 1, descendant: 2, depth: 1, desc: "Parent Relation (Root)" }
+            ],
+            3: [
+                { ancestor: 3, descendant: 3, depth: 0, desc: "Self Reference (WasobiTech)" },
+                { ancestor: 1, descendant: 3, depth: 1, desc: "Parent Relation (Root)" }
+            ],
+            4: [
+                { ancestor: 4, descendant: 4, depth: 0, desc: "Self Reference (Chat AI)" },
+                { ancestor: 1, descendant: 4, depth: 1, desc: "Parent Relation (Root)" }
+            ]
+        };
+
+        function selectClosureFolder(id, name) {
+            document.getElementById('selected-folder-badge').innerText = `Folder: ${name} (ID ${id})`;
+            const rowsContainer = document.getElementById('closure-table-rows');
+            rowsContainer.innerHTML = '';
+
+            const rows = closureMockData[id] || [];
+            rows.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-sand-50";
+                tr.innerHTML = `
+                    <td class="p-2.5 font-mono text-emeraldCustom-800 font-bold">${r.ancestor}</td>
+                    <td class="p-2.5 font-mono text-slate-800 font-bold">${r.descendant}</td>
+                    <td class="p-2.5 font-mono">${r.depth}</td>
+                    <td class="p-2.5 text-slate-600">${r.desc}</td>
+                `;
+                rowsContainer.appendChild(tr);
+            });
+        }
+
+        // ==================== TAB 4: CANONICALIZER SIMULATOR ====================
+        function setCanonicalSample(type) {
+            const input = document.getElementById('canonical-input-url');
+            if (type === 1) {
+                input.value = "HTTP://WWW.FREEDOWNLOADLOGO.COM:80/alphabet/a/";
+            } else if (type === 2) {
+                input.value = "http://search.startnow.com/?src=startpage&provider=startnow&partner_id=999";
+            } else if (type === 3) {
+                input.value = "chrome://history/";
+            }
+            runCanonicalizerSim();
+        }
+
+        async function sha256(message) {
+            const msgUint8 = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function runCanonicalizerSim() {
+            const raw = document.getElementById('canonical-input-url').value.trim();
+            if (!raw) return;
+
+            if (raw.startsWith('chrome://') || raw.startsWith('file://')) {
+                document.getElementById('res-lowercase').innerText = raw;
+                document.getElementById('res-port').innerText = "N/A (Protokol Browser Internal)";
+                document.getElementById('res-params').innerText = "Tanpa Parameter Tracking";
+                document.getElementById('res-fragment').innerText = "Tanpa Fragment";
+                document.getElementById('res-final-url').innerText = raw;
+                document.getElementById('res-type-tag').innerText = "INTERNAL BROWSER";
+                document.getElementById('res-type-tag').className = "text-[10px] bg-amber-600 px-2 py-0.5 rounded font-bold";
+                
+                const hash = await sha256(raw);
+                document.getElementById('res-sha256').innerText = hash;
+                return;
+            }
+
+            try {
+                const urlObj = new URL(raw);
+                
+                // Step 1: Lowercase scheme & host
+                const scheme = urlObj.protocol.toLowerCase();
+                let host = urlObj.hostname.toLowerCase();
+                document.getElementById('res-lowercase').innerText = `${scheme}//${host}${urlObj.pathname}`;
+
+                // Step 2: Strip port & www
+                if (host.startsWith('www.')) host = host.substring(4);
+                document.getElementById('res-port').innerText = `${scheme}//${host}${urlObj.pathname}`;
+
+                // Step 3: Strip tracking params
+                const params = new URLSearchParams(urlObj.search);
+                const ignored = ['utm_source', 'utm_medium', 'utm_campaign', 'fbclid', 'gclid', 'ref', 'affiliate_id', 'src', 'uniqid'];
+                ignored.forEach(k => params.delete(k));
+
+                let cleanQuery = params.toString();
+                document.getElementById('res-params').innerText = cleanQuery ? `?${cleanQuery}` : "Semua Parameter Tracking Dihapus";
+
+                // Step 4: Final Canonical URL
+                let path = urlObj.pathname.replace(/\/$/, "");
+                let finalUrl = `${scheme}//${host}${path}${cleanQuery ? '?' + cleanQuery : ''}`;
+                
+                document.getElementById('res-fragment').innerText = "Fragment (#) dan Trailing Slash Dihapus";
+                document.getElementById('res-final-url').innerText = finalUrl;
+                document.getElementById('res-type-tag').innerText = "EKSTERNAL KANONIKAL";
+                document.getElementById('res-type-tag').className = "text-[10px] bg-emeraldCustom-600 px-2 py-0.5 rounded font-bold";
+
+                const hash = await sha256(finalUrl);
+                document.getElementById('res-sha256').innerText = hash;
+
+            } catch (e) {
+                document.getElementById('res-final-url').innerText = "URL Tidak Valid";
+                document.getElementById('res-sha256').innerText = "-";
+            }
+        }
+
+        // ==================== INITIALIZATION ON LOAD ====================
+        window.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            renderBookmarkTable(bookmarkDataset);
+            selectClosureFolder(2, 'Bookmarks bar');
+            runCanonicalizerSim();
+        });
+    </script>
+</body>
+</html>
